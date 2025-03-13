@@ -38,9 +38,10 @@ namespace FluenceFrame.Services
             //get first field.
             Beam beam1 = Plan.Beams.First(b => !b.IsSetupField);
             //construct fluence.
-            
-            Fluence fluence = new Fluence(fluence, )
-            beam1.SetOptimalFluence()
+
+            Fluence fieldfluence = new Fluence(fluence, 0, 0);
+            //beam1.SetOptimalFluence()
+            return true;
         }
         //public static bool GenerateCourse()
         //{
