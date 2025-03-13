@@ -1,0 +1,78 @@
+﻿<Window x:Class="FluenceFrame.Views.MainView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:FluenceFrame.Views"
+        mc:Ignorable="d"
+        Title="Fluence Art" Height="450" Width="800"
+        Background="{StaticResource BackgroundBrush}">
+    <Grid>
+        <DockPanel>
+            <!-- Header -->
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Background="LightGray" Margin="10">
+                <TextBlock Text="FluenceArt" FontSize="20" FontWeight="Bold" VerticalAlignment="Center" />
+                <!--<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="Auto">
+                    --><!-- Optional icons/buttons for settings, help, etc. --><!--
+                    <Button Content="Settings" Margin="10,0,0,0" />
+                    <Button Content="Help" Margin="10,0,0,0" />
+                    <Button Content="User" Margin="10,0,0,0" />
+                </StackPanel>-->
+            </StackPanel>
+
+            <!-- Footer -->
+            <StatusBar DockPanel.Dock="Bottom">
+                <StatusBarItem>
+                    <TextBlock Text="{Binding Status}" />
+                </StatusBarItem>
+            </StatusBar>
+
+            <!-- Main Content Area -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="200" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="200" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Left Panel: Image Import and Conversion Status -->
+                <StackPanel Grid.Column="0" Margin="10">
+                    <Button Content="Import Image" Margin="0,0,0,10" Command="{Binding ImportImageCommand}" />
+                    <TextBlock Text="{Binding ImageDetails}" Margin="0,10,0,0" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <!-- Center Panel: Preview Area -->
+                <Grid Grid.Column="1" Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Border BorderBrush="Black" BorderThickness="1">
+                        <Image Stretch="Uniform" Source="{Binding ImageSource}"/>
+                    </Border>
+                    <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Center" Margin="0,10,0,0">
+                        <RadioButton Content="Original Image" IsChecked="{Binding OriginalSelected}" Margin="10,0" />
+                        <RadioButton Name="rbFluence" Content="Fluence Map" IsChecked="{Binding FluenceSelected}" Margin="10,0" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- Right Panel: Export and ARIA Integration -->
+                <StackPanel Grid.Column="2" Margin="10">
+                    <Button Content="Export Fluence Map" Margin="0,0,0,10" Command="{Binding ExportToFileCommand}" />
+                    <!-- Optional: Expandable panel for patient details -->
+                    <Expander Header="Patient Details" IsExpanded="False" Margin="0,20,0,0">
+                        <StackPanel>
+                            <TextBox Margin="0,5,0,5" 
+                                 ToolTip="Enter Patient ID" 
+                                 Text="{Binding PatientId}"/>
+                            <ComboBox Margin="0,5,0,5" ItemsSource="{Binding Plans}" SelectedItem="{Binding SelectedPlan}"
+                                      DisplayMemberPath="PlanDescription"/>
+                        </StackPanel>
+                    </Expander>
+                    <Button Content="Push to ARIA" Margin="0,10,0,10" Command="{Binding PushToARIACommand}"/>
+
+                </StackPanel>
+            </Grid>
+        </DockPanel>
+    </Grid>
+</Window>
