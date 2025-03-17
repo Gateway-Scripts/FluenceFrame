@@ -6,7 +6,7 @@ Below is an example of a GitHub README.md file for your project. You can adjust 
 
 **FluenceArt** is a WPF-based Eclipse scripting application that converts user-imported images into normalized fluence maps. Designed for physicists and radiotherapy professionals, it allows users to visualize fluence maps as heat maps, export the data in a custom format, and even integrate directly with ARIA patient records.
 
-![Logo or Main Screenshot](path/to/your/screenshot.png)
+![Logo or Main Screenshot](resources/TheoTransfer.PNG)
 
 ## Features
 
@@ -22,9 +22,9 @@ Below is an example of a GitHub README.md file for your project. You can adjust 
 
 ### Prerequisites
 
-- [Visual Studio](https://visualstudio.microsoft.com/) 2019 or later
-- .NET Framework 4.7.2 (or later) / .NET 5+ (depending on your target)
-- Eclipse Scripting (if integrating with ARIA)
+- This application is available in V15.6, V16.1, and V18.1 of Eclipse.
+- Applications utilizes .NET Framework 4.5, 4.6.1 and 4.8 for the versions of Eclipse listed above.
+- Patient ID may be passed in with input argument.
 
 ### Installation
 
@@ -77,7 +77,7 @@ Below is an example of a GitHub README.md file for your project. You can adjust 
 5. **Push to ARIA:**  
    If desired, enter the patient details and click **Push to ARIA** to integrate the fluence map into the ARIA system.
 
-![UI Screenshot](path/to/ui-screenshot.png)
+![UI Screenshot](resources/FluenceArtUI.PNG)
 
 ## Code Structure
 
