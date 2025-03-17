@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using VMS.TPS.Common.Model.API;
 using VMS.TPS.Common.Model.Types;
 
@@ -21,7 +22,7 @@ namespace FluenceFrame.Services
         {
             Patient = patient;
         }
-        public static void SetCourse (Course course)
+        public static void SetCourse(Course course)
         {
             Course = course;
         }
@@ -33,14 +34,14 @@ namespace FluenceFrame.Services
         {
             Patient.BeginModifications();
         }
-        public static bool SetFluence(bool autoCalculate, float[,] fluence)
+        public static bool SetFluence(bool autoCalculate, float[,] fluence, Point origin)
         {
             //get first field.
             Beam beam1 = Plan.Beams.First(b => !b.IsSetupField);
             //construct fluence.
 
-            Fluence fieldfluence = new Fluence(fluence, 0, 0);
-            //beam1.SetOptimalFluence()
+            Fluence fieldfluence = new Fluence(fluence, origin.X, origin.Y);
+            beam1.SetOptimalFluence(fieldfluence);
             return true;
         }
         //public static bool GenerateCourse()

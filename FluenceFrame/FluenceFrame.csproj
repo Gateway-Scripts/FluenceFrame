@@ -69,6 +69,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Models\FluenceModel.cs" />
     <Compile Include="Models\PlanModel.cs" />
     <Compile Include="Services\EsapiAutomationService.cs" />
     <Compile Include="Services\FluenceConverter.cs" />
