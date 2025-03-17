@@ -2,6 +2,8 @@
 
 **FluenceArt** is a WPF-based Eclipse scripting application that converts user-imported images into normalized fluence maps. Designed for physicists and radiotherapy professionals, it allows users to visualize fluence maps as heat maps, export the data in a custom format, and even integrate directly with ARIA patient records.
 
+### Please Note: This tool is not intended for patient treatment. This tool is a novelty for fun experiments.
+
 ![Logo or Main Screenshot](resources/TheoTransfer.PNG)
 
 ## Features
@@ -20,7 +22,7 @@
 
 - This application is available in V15.6, V16.1, and V18.1 of Eclipse.
 - Applications utilizes .NET Framework 4.5, 4.6.1 and 4.8 for the versions of Eclipse listed above.
-- Patient ID may be passed in with input argument.
+- Patient ID may be passed in with input argument or not.
 
 ### Installation
 
@@ -55,23 +57,10 @@
    If the imported image exceeds a physical width of 20 cm (based on a sampling of 2.5 mm per pixel), the tool automatically downsamples the image by half to ensure compatibility with MLC field size limits.
 
 4. **Export Fluence Map:**  
-   Click **Export Fluence Map** to save the generated fluence map. The file format is similar to the following:
-
-   ```
-   # Field 1 - Fluence
-   optimalfluence
-   sizex	32
-   sizey	32
-   spacingx	2.5
-   spacingy	2.5
-   originx	-38.75
-   originy	38.75
-   values
-   0	0	0	...
-   ```
+   Click **Export Fluence Map** to save the generated fluence map.
 
 5. **Push to ARIA:**  
-   If desired, enter the patient details and click **Push to ARIA** to integrate the fluence map into the ARIA system.
+   If desired, enter the patient details and click **Push to ARIA** to integrate the fluence map into the ARIA system. Please note, the script would need approval prior to using this feature in a Clinical Eclipse system. 
 
 ![UI Screenshot](resources/FluenceArtUI.PNG)
 
@@ -87,72 +76,133 @@
 ### Image Import and Conversion
 
 ```csharp
-private void ImportImage(object parameter)
-{
-    OpenFileDialog openFileDialog = new OpenFileDialog
-    {
-        Filter = "Image Files (*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.tif;*.tiff)|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.tif;*.tiff|All Files (*.*)|*.*"
-    };
+private void OnImportImage(object obj)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Filter = "Image Files (*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.tif;*.tiff)|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.tif;*.tiff|All Files (*.*)|*.*"
+            };
 
-    if (openFileDialog.ShowDialog() == true)
-    {
-        string filePath = openFileDialog.FileName;
-        BitmapImage bitmap = new BitmapImage();
-        bitmap.BeginInit();
-        bitmap.UriSource = new Uri(filePath);
-        bitmap.CacheOption = BitmapCacheOption.OnLoad;
-        bitmap.EndInit();
-        bitmap.Freeze();
+            if (openFileDialog.ShowDialog() == true)
+            {
+                string filePath = openFileDialog.FileName;
 
-        // Downsample if necessary
-        BitmapSource processedImage = ImageResizer.DownsampleIfTooLarge(bitmap);
+                try
+                {
+                    // Load the image into a BitmapImage.
+                    BitmapImage bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.UriSource = new Uri(filePath);
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad; // ensures the file is closed after load
+                    bitmap.EndInit();
+                    bitmap.Freeze(); // makes it cross-thread accessible
 
-        // Set the image source for preview and convert to fluence map.
-        ImageSource = processedImage;
-        // Further processing to generate fluence map...
-    }
-}
+                    ImageSource = bitmap;
+                    _originalImage = bitmap;
+                    // Retrieve file info and update details string.
+                    FileInfo fileInfo = new FileInfo(filePath);
+                    ImageDetails = $"Filename: {fileInfo.Name}\n" +
+                                   $"Dimensions: {bitmap.PixelWidth} x {bitmap.PixelHeight}\n" +
+                                   $"Size: {fileInfo.Length / 1024} KB";
+                    if(bitmap.PixelWidth>80 || bitmap.PixelHeight > 80)
+                    {
+                        ImageDetails += $"\nImage dimensions too large.\nImage will be downsampled automatically.";
+                    }
+                    FluenceModel fluenceModel = FluenceConverter.ConvertImageToFluenceMap(bitmap);
+                    fluence = fluenceModel.Fluence;
+                    origin = fluenceModel.Origin;
+                    _fluenceImage = FluenceConverter.ConvertFluenceMapToHeatMap();
+                    ExportToFileCommand.RaiseCanExecuteChanged();
+
+
+                    if (SelectedPlan == null)
+                    {
+                        PushMessage = "Select a plan to push to ARIA";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Update the details string with error information.
+                    ImageDetails = $"Error loading image: {ex.Message}\n{ex.InnerException}";
+                }
+            }
+        }
 ```
 
-### Exporting the Fluence Map
+### Concert Image to Bitmap
 
 ```csharp
-public static void ExportFluenceMap(float[,] fluenceMap, string filePath, float spacingX, float spacingY, double originX, double originY)
-{
-    using (StreamWriter writer = new StreamWriter(filePath))
-    {
-        writer.WriteLine("# Field 1 - Fluence");
-        writer.WriteLine("optimalfluence");
-        writer.WriteLine($"sizex\t{fluenceMap.GetLength(1)}");
-        writer.WriteLine($"sizey\t{fluenceMap.GetLength(0)}");
-        writer.WriteLine($"spacingx\t{spacingX.ToString(CultureInfo.InvariantCulture)}");
-        writer.WriteLine($"spacingy\t{spacingY.ToString(CultureInfo.InvariantCulture)}");
-        writer.WriteLine($"originx\t{originX.ToString("F4", CultureInfo.InvariantCulture)}");
-        writer.WriteLine($"originy\t{originY.ToString("F4", CultureInfo.InvariantCulture)}");
-        writer.WriteLine("values");
-
-        for (int y = 0; y < fluenceMap.GetLength(0); y++)
+        /// <summary>
+        /// Converts a given BitmapSource into a fluence map array.
+        /// The fluence map is a 2D array of floats normalized to a maximum value of 1.0.
+        /// The resolution is fixed at 2.5mm (0.25cm) per pixel.
+        /// The origin is calculated as half the size of the fluence map (in pixels) multiplied by the resolution.
+        /// </summary>
+        /// <param name="source">The source image to convert.</param>
+        /// <returns>A tuple containing the fluence map (float[,]) and the origin (Point).</returns>
+        public static FluenceModel ConvertImageToFluenceMap(BitmapSource source)
         {
-            string[] rowValues = new string[fluenceMap.GetLength(1)];
-            for (int x = 0; x < fluenceMap.GetLength(1); x++)
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            LocalFluence = new FluenceModel();
+            // Ensure the image is in a grayscale format (Gray8) for a single intensity value per pixel.
+            BitmapSource graySource = DownsampleIfTooLarge(source);
+            if (source.Format != PixelFormats.Gray8)
             {
-                rowValues[x] = fluenceMap[y, x].ToString("G6", CultureInfo.InvariantCulture);
+                graySource = new FormatConvertedBitmap(graySource, PixelFormats.Gray8, null, 0);
             }
-            writer.WriteLine(string.Join("\t", rowValues));
+
+            int width = graySource.PixelWidth;
+            int height = graySource.PixelHeight;
+
+            // Allocate an array to receive pixel data.
+            byte[] pixels = new byte[width * height];
+            graySource.CopyPixels(pixels, width, 0);
+
+            // Determine the maximum pixel value to use for normalization.
+            byte maxPixel = 0;
+            foreach (byte pixel in pixels)
+            {
+                if (pixel > maxPixel)
+                    maxPixel = pixel;
+            }
+            // Prevent division by zero.
+            if (maxPixel == 0)
+                maxPixel = 1;
+
+            // Create the fluence map as a 2D float array.
+            float[,] fluence = new float[height, width];
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    byte pixelValue = pixels[y * width + x];
+                    // Normalize pixel value to the range [0, 1].
+                    float normalizedValue = pixelValue / (float)maxPixel;
+                    fluence[y, x] = normalizedValue;
+                }
+            }
+
+            // Define the resolution: 2.5mm per pixel = 0.25cm per pixel.
+            float resolution = 2.5f; // in mm
+
+            // Calculate the origin position.
+            // The formula used here is: originX = -((width - 1) / 2) * resolution, originY = ((height - 1) / 2) * resolution.
+            // This positions the center (or near center) of the fluence map about the isocenter.
+            float originX = -((width - 1) / 2.0f) * resolution;
+            float originY = ((height - 1) / 2.0f) * resolution;
+            Point origin = new Point(originX, originY);
+            //set local fluence
+            LocalFluence.Fluence = fluence;
+            LocalFluence.Origin = origin;
+            return new FluenceModel()
+            {
+                Fluence = fluence,
+                Origin = origin
+            };
+            //return (fluenceMap, new Point(originX, originY));
         }
-    }
-}
 ```
-
-## Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature-branch`).
-3. Make your changes and commit them (`git commit -am 'Add new feature'`).
-4. Push to your branch (`git push origin feature-branch`).
-5. Create a Pull Request.
 
 ## License
 
