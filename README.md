@@ -1,7 +1,3 @@
-Below is an example of a GitHub README.md file for your project. You can adjust the images and links as needed.
-
----
-
 # FluenceArt
 
 **FluenceArt** is a WPF-based Eclipse scripting application that converts user-imported images into normalized fluence maps. Designed for physicists and radiotherapy professionals, it allows users to visualize fluence maps as heat maps, export the data in a custom format, and even integrate directly with ARIA patient records.
