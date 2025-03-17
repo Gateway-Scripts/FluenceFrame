@@ -79,6 +79,8 @@ namespace FluenceFrame.ViewModels
             {
                 SetProperty(ref _patientId,value);
                 PushToARIACommand.RaiseCanExecuteChanged();
+                OpenPatientCommand.RaiseCanExecuteChanged();
+
             }
         }
 
@@ -123,6 +125,7 @@ namespace FluenceFrame.ViewModels
         public RelayCommand PushToARIACommand { get; private set; }
         public float[,] fluence { get; private set; }
         public Point origin { get; private set; }
+        public RelayCommand OpenPatientCommand { get; private set; }
         public MainViewModel(VMS.TPS.Common.Model.API.Application app, Patient patient)
         {
             _app = app;
@@ -133,11 +136,24 @@ namespace FluenceFrame.ViewModels
             ImportImageCommand = new RelayCommand(OnImportImage);
             ExportToFileCommand = new RelayCommand(OnExportImage, CanExportImage);
             PushToARIACommand = new RelayCommand(OnPushToARIA, CanPushToARIA);
+            OpenPatientCommand = new RelayCommand(OnOpenPatient, CanOpenPatient);
             PushMessage = "Import image to convert";
             if (_app != null) { CanARIA = true; }
             if (_patient != null) { PatientId = _patient.Id; }
             GetPlans();
         }
+
+        private bool CanOpenPatient(object arg)
+        {
+            return !String.IsNullOrEmpty(PatientId);
+        }
+
+        private void OnOpenPatient(object obj)
+        {
+            _patient = _app.OpenPatientById(PatientId);
+            GetPlans();
+        }
+
 
         private void GetPlans()
         {

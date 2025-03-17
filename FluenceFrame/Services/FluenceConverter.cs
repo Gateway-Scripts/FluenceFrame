@@ -205,14 +205,15 @@ namespace FluenceFrame.Services
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
-
+            int maxLength = Math.Max(source.PixelWidth, source.PixelHeight);
             // Calculate the physical width in cm.
-            double physicalWidth_cm = source.PixelWidth * samplingResolution_cm;
+            double physicalWidth_cm = maxLength * samplingResolution_cm;
 
             // Check if the physical width exceeds the maximum allowed.
             if (physicalWidth_cm > maxPhysicalWidth_cm)
             {
                 // Downsample by applying a ScaleTransform with a scale factor of 0.5.
+                double scaleFactor = Math.Round(100.0 / maxLength,1);
                 var scaleTransform = new ScaleTransform(0.5, 0.5);
                 var transformedBitmap = new TransformedBitmap();
                 transformedBitmap.BeginInit();
