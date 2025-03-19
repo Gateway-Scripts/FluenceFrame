@@ -17,7 +17,6 @@ namespace FluenceFrame
     public partial class App : Application
     {
         private string _patientId;
-        private string _courseId;
 
         public bool ESAPIMode { get; private set; }
 
@@ -56,9 +55,10 @@ namespace FluenceFrame
             else
             {
                 var mainView = new MainView();
-                var mainViewModel = new MainViewModel(null,null);
+                var mainViewModel = new MainViewModel();
                 mainView.DataContext = mainViewModel;
                 mainView.ShowDialog();
+                App.Current.Shutdown();
             }
         }
     }
