@@ -56,9 +56,10 @@ namespace FluenceFrame
             else
             {
                 var mainView = new MainView();
-                var mainViewModel = new MainViewModel(null,null);
+                var mainViewModel = new MainViewModel();
                 mainView.DataContext = mainViewModel;
                 mainView.ShowDialog();
+                App.Current.Shutdown();
             }
         }
     }

@@ -93,6 +93,7 @@ namespace FluenceFrame.ViewModels
             {
                 SetProperty(ref _canARIA,value);
                 PushToARIACommand.RaiseCanExecuteChanged();
+                OpenPatientCommand.RaiseCanExecuteChanged();
             }
         }
         private PlanModel _selectedPlan;
@@ -142,10 +143,19 @@ namespace FluenceFrame.ViewModels
             if (_patient != null) { PatientId = _patient.Id; }
             GetPlans();
         }
+        public MainViewModel()
+        {
+            OriginalSelected = true;
+            ImportImageCommand = new RelayCommand(OnImportImage);
+            ExportToFileCommand = new RelayCommand(OnExportImage, CanExportImage);
+            PushToARIACommand = new RelayCommand(OnPushToARIA, CanPushToARIA);
+            OpenPatientCommand = new RelayCommand(OnOpenPatient, CanOpenPatient);
+            PushMessage = "Import image to convert";
+        }
 
         private bool CanOpenPatient(object arg)
         {
-            return !String.IsNullOrEmpty(PatientId);
+            return !String.IsNullOrEmpty(PatientId) && CanARIA;
         }
 
         private void OnOpenPatient(object obj)
